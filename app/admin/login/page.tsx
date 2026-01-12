@@ -3,8 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminApi } from '@/lib/api';
-import { setAdminAuth } from '@/lib/admin';
-import Link from 'next/link';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -20,97 +18,85 @@ export default function AdminLoginPage() {
 
     try {
       const response = await adminApi.login(username, password);
-
       if (response.success && response.data) {
         const { token, admin } = response.data;
-        setAdminAuth(token, admin);
+        localStorage.setItem('admin_token', token);
+        localStorage.setItem('admin_role', admin.role);
+        localStorage.setItem('admin_username', admin.username);
         router.push('/admin/dashboard');
       } else {
         setError(response.error || 'Login failed');
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
-      console.error('Login error:', err);
+      setError('Connection error. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            BlueTech Admin
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to manage your store
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FFF9F0' }}>
+      <div className="card-memphis" style={{ width: '100%', maxWidth: '450px', margin: '2rem' }}>
+        <div style={{ padding: '2.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <h1 style={{ fontSize: '2.5rem', color: '#FF71CE', fontWeight: '700' }}>
+              Admin Portal
+            </h1>
+            <p style={{ color: '#4A4A6A', marginTop: '0.5rem' }}>B2B Website Management</p>
+          </div>
+
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
+            <div style={{ background: '#FEE2E2', color: '#991B1B', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1rem', fontWeight: '600' }}>
+              ⚠️ {error}
             </div>
           )}
-          <div className="rounded-md shadow-sm -space-y-px">
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div>
-              <label htmlFor="username" className="sr-only">
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.875rem' }}>
                 Username
               </label>
               <input
-                id="username"
-                name="username"
                 type="text"
-                required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Username"
+                className="input-memphis"
+                placeholder="Enter username"
+                required
               />
             </div>
+
             <div>
-              <label htmlFor="password" className="sr-only">
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.875rem' }}>
                 Password
               </label>
               <input
-                id="password"
-                name="password"
                 type="password"
-                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
+                className="input-memphis"
+                placeholder="Enter password"
+                required
               />
             </div>
-          </div>
 
-          <div>
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="btn-memphis"
+              style={{ background: '#FF71CE', color: 'white', fontSize: '1rem', padding: '1rem' }}
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? 'Signing in...' : '🔐 Sign In'}
             </button>
-          </div>
+          </form>
 
-          <div className="text-center text-sm text-gray-600">
-            <Link href="/" className="hover:text-blue-600">
-              ← Back to website
-            </Link>
+          <div style={{ marginTop: '2rem', padding: '1rem', background: '#FEF3C7', borderRadius: '0.5rem', border: '2px dashed #FFCE5C' }}>
+            <p style={{ fontSize: '0.875rem', fontWeight: '700', marginBottom: '0.5rem' }}>🔑 Demo Credentials:</p>
+            <p style={{ fontSize: '0.875rem', color: '#4A4A6A', lineHeight: '1.6' }}>
+              <strong>Username:</strong> admin<br />
+              <strong>Password:</strong> admin123
+            </p>
           </div>
-        </form>
-
-        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-4">
-          <p className="text-sm text-blue-800">
-            <strong>Demo Credentials:</strong>
-          </p>
-          <p className="text-sm text-blue-700 mt-1">
-            Username: admin<br />
-            Password: admin123
-          </p>
         </div>
       </div>
     </div>

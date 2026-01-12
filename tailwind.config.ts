@@ -13,12 +13,31 @@ const config: Config = {
         body: ['var(--font-open-sans)', 'sans-serif'],
       },
       colors: {
-        primary: '#0066CC',
-        'primary-dark': '#0052A3',
-        secondary: '#00B894',
-        accent: '#FF6B6B',
-        dark: '#0F172A',
-        light: '#F8FAFC',
+        // Memphis Design Colors
+        primary: {
+          DEFAULT: '#FF71CE',
+          dark: '#FF1493',
+          light: '#FFB3E6',
+        },
+        secondary: {
+          DEFAULT: '#FFCE5C',
+          dark: '#FFB300',
+          light: '#FFE08A',
+        },
+        accent: {
+          DEFAULT: '#86CCCA',
+          dark: '#5FBDBA',
+          light: '#B3E0DF',
+        },
+        purple: {
+          DEFAULT: '#6A7BB4',
+          dark: '#4A5A94',
+          light: '#9AA8D4',
+        },
+        success: '#10b981',
+        error: '#ef4444',
+        background: '#FFF9F0',
+        surface: '#FFFFFF',
       },
     },
   },

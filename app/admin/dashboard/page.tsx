@@ -1,170 +1,259 @@
-import { adminApi, DashboardStats } from '@/lib/api';
-import { requireAuth } from '@/lib/admin';
+'use client';
 
-async function DashboardStats() {
-  const admin = await requireAuth();
-  if (!admin) return null;
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import AdminSidebar from '@/components/admin/AdminSidebar';
+import AdminHeader from '@/components/admin/AdminHeader';
+import { productsApi, inquiriesApi, adminApi, Product, Inquiry } from '@/lib/api';
+import { showNotification } from '@/components/admin/Notification';
 
-  const token = admin.username ? 'temp-token' : ''; // Will use proper token from cookie
+export default function AdminDashboardPage() {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [user, setUser] = useState({ username: '', role: '' });
+  const [stats, setStats] = useState<any>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/stats`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      return null;
+  useEffect(() => {
+    // Check authentication
+    const token = localStorage.getItem('admin_token');
+    if (!token) {
+      router.push('/admin/login');
+      return;
     }
 
-    const data = await response.json();
-    return data.data as DashboardStats;
-  } catch (error) {
-    console.error('Error fetching dashboard stats:', error);
-    return null;
-  }
-}
+    setUser({
+      username: localStorage.getItem('admin_username') || 'Admin',
+      role: localStorage.getItem('admin_role') || 'admin'
+    });
 
-export default async function AdminDashboardPage() {
-  const admin = await requireAuth();
-  if (!admin) {
-    return null;
-  }
+    fetchData();
+  }, [router]);
 
-  const stats = await DashboardStats();
+  const fetchData = async () => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) return;
 
-  const statCards = stats ? [
-    {
-      title: 'Total Products',
-      value: stats.products.total,
-      icon: '📦',
-      color: 'bg-blue-500',
-    },
-    {
-      title: 'Featured Products',
-      value: stats.products.featured,
-      icon: '⭐',
-      color: 'bg-yellow-500',
-    },
-    {
-      title: 'Total Inquiries',
-      value: stats.inquiries.total,
-      icon: '📧',
-      color: 'bg-green-500',
-    },
-    {
-      title: 'Pending Inquiries',
-      value: stats.inquiries.pending,
-      icon: '⏳',
-      color: 'bg-orange-500',
-    },
-  ] : [];
+    try {
+      setLoading(false);
+      // Fetch stats
+      const statsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/stats`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const statsData = await statsResponse.json();
+      if (statsData.success) setStats(statsData.data);
+
+      // Fetch products
+      const productsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`);
+      const productsData = await productsResponse.json();
+      if (productsData.success) setProducts(productsData.data || []);
+
+      // Fetch inquiries
+      const inquiriesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/inquiries`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const inquiriesData = await inquiriesResponse.json();
+      if (inquiriesData.success) setInquiries(inquiriesData.data || []);
+    } catch (error) {
+      showNotification('Failed to load data', 'error');
+    }
+  };
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+  };
+
+  const isSuperAdmin = user.role === 'super_admin';
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            Welcome back, {admin.username}! Here's what's happening with your store today.
-          </p>
-        </div>
-      </div>
+    <div className="admin-layout">
+      <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} userRole={user.role} />
 
-      {/* Stats Grid */}
-      <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((stat) => (
-          <div
-            key={stat.title}
-            className="relative bg-white pt-5 px-4 pb-12 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden"
-          >
-            <dt>
-              <div className={`absolute rounded-md p-3 ${stat.color}`}>
-                <span className="text-2xl">{stat.icon}</span>
+      <main className="admin-content">
+        <AdminHeader username={user.username} role={user.role} />
+
+        {loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+            <div className="spinner"></div>
+          </div>
+        ) : (
+          <>
+            {/* Overview Tab */}
+            {activeTab === 'overview' && (
+              <div className="tab-content active">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                  <div className="stat-card" style={{ background: 'linear-gradient(135deg, #FF71CE 0%, #FFB3E6 100%)', color: 'white' }}>
+                    <h3 style={{ fontSize: '0.875rem', opacity: 0.9 }}>📦 Total Products</h3>
+                    <div className="stat-value" style={{ color: 'white', fontSize: '3rem' }}>
+                      {stats?.products?.total || products.length || 0}
+                    </div>
+                  </div>
+                  <div className="stat-card" style={{ background: 'linear-gradient(135deg, #86CCCA 0%, #B3E0DF 100%)', color: 'white' }}>
+                    <h3 style={{ fontSize: '0.875rem', opacity: 0.9 }}>💬 Total Inquiries</h3>
+                    <div className="stat-value" style={{ color: 'white', fontSize: '3rem' }}>
+                      {stats?.inquiries?.total || inquiries.length || 0}
+                    </div>
+                  </div>
+                  <div className="stat-card" style={{ background: 'linear-gradient(135deg, #FFCE5C 0%, #FFE08A 100%)', color: 'white' }}>
+                    <h3 style={{ fontSize: '0.875rem', opacity: 0.9 }}>⏳ Pending</h3>
+                    <div className="stat-value" style={{ color: 'white', fontSize: '3rem' }}>
+                      {stats?.inquiries?.pending || inquiries.filter(i => i.status === 'pending').length || 0}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card-memphis">
+                  <div style={{ padding: '1.5rem', borderBottom: '2px solid #FF71CE' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: '700' }}>📋 Recent Inquiries</h2>
+                  </div>
+                  <div className="table-container">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Email</th>
+                          <th>Status</th>
+                          <th>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inquiries.slice(0, 5).map((inquiry) => (
+                          <tr key={inquiry.id}>
+                            <td style={{ fontWeight: '600' }}>{inquiry.name}</td>
+                            <td>{inquiry.email}</td>
+                            <td>
+                              <span className={`badge badge-${inquiry.status}`}>
+                                {inquiry.status}
+                              </span>
+                            </td>
+                            <td style={{ fontSize: '0.875rem', color: '#4A4A6A' }}>
+                              {new Date(inquiry.created_at).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
-              <p className="ml-16 text-sm font-medium text-gray-500 truncate">
-                {stat.title}
-              </p>
-            </dt>
-            <dd className="ml-16 pb-6 flex items-baseline sm:pb-7">
-              <p className="text-2xl font-semibold text-gray-900">
-                {stat.value}
-              </p>
-            </dd>
-          </div>
-        ))}
-      </div>
+            )}
 
-      {/* Recent Activity Section */}
-      <div className="mt-8">
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:px-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Quick Actions
-            </h3>
-          </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <a
-                href="/admin/products"
-                className="relative block bg-white p-6 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="text-3xl mb-3">📦</div>
-                <h3 className="text-lg font-medium text-gray-900">Manage Products</h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Add, edit, or remove products from your catalog
-                </p>
-              </a>
+            {/* Products Tab */}
+            {activeTab === 'products' && (
+              <div className="tab-content active">
+                <div className="card-memphis">
+                  <div style={{ padding: '1.5rem', borderBottom: '2px solid #FF71CE', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: '700' }}>📦 Products</h2>
+                    {isSuperAdmin && (
+                      <a
+                        href="/admin/products/new"
+                        className="btn-memphis"
+                        style={{ background: '#FF71CE', color: 'white', textDecoration: 'none' }}
+                      >
+                        ➕ Add Product
+                      </a>
+                    )}
+                  </div>
+                  <div className="table-container">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Name</th>
+                          <th>Category</th>
+                          <th>Featured</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {products.map((product) => (
+                          <tr key={product.id}>
+                            <td>#{product.id}</td>
+                            <td style={{ fontWeight: '600' }}>{product.name}</td>
+                            <td>
+                              <span className="badge" style={{ background: '#E0F2FE', color: '#0369A1' }}>
+                                {product.category}
+                              </span>
+                            </td>
+                            <td>{product.is_featured ? '⭐' : '—'}</td>
+                            <td>
+                              <span className={`badge ${product.is_active ? 'badge-completed' : 'badge-pending'}`}>
+                                {product.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
 
-              <a
-                href="/admin/inquiries"
-                className="relative block bg-white p-6 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="text-3xl mb-3">📧</div>
-                <h3 className="text-lg font-medium text-gray-900">View Inquiries</h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Respond to customer inquiries and messages
-                </p>
-              </a>
+            {/* Inquiries Tab */}
+            {activeTab === 'inquiries' && (
+              <div className="tab-content active">
+                <div className="card-memphis">
+                  <div style={{ padding: '1.5rem', borderBottom: '2px solid #FF71CE' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: '700' }}>💬 Inquiries</h2>
+                  </div>
+                  <div className="table-container">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Email</th>
+                          <th>Company</th>
+                          <th>Status</th>
+                          <th>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inquiries.map((inquiry) => (
+                          <tr key={inquiry.id}>
+                            <td style={{ fontWeight: '600' }}>{inquiry.name}</td>
+                            <td>{inquiry.email}</td>
+                            <td>{inquiry.company || '—'}</td>
+                            <td>
+                              <span className={`badge badge-${inquiry.status}`}>
+                                {inquiry.status}
+                              </span>
+                            </td>
+                            <td style={{ fontSize: '0.875rem', color: '#4A4A6A' }}>
+                              {new Date(inquiry.created_at).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
 
-              <a
-                href="/admin/settings"
-                className="relative block bg-white p-6 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="text-3xl mb-3">⚙️</div>
-                <h3 className="text-lg font-medium text-gray-900">Site Settings</h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Update website configuration and preferences
-                </p>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Inquiries Preview */}
-      {stats && stats.inquiries.recent > 0 && (
-        <div className="mt-8 bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-            <div>
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Recent Activity
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {stats.inquiries.recent} new inquiries in the last 7 days
-              </p>
-            </div>
-            <a
-              href="/admin/inquiries"
-              className="text-sm font-medium text-blue-600 hover:text-blue-500"
-            >
-              View all →
-            </a>
-          </div>
-        </div>
-      )}
+            {/* Settings Tab */}
+            {activeTab === 'settings' && (
+              <div className="tab-content active">
+                <div className="card-memphis">
+                  <div style={{ padding: '1.5rem', borderBottom: '2px solid #FF71CE' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: '700' }}>⚙️ Website Settings</h2>
+                  </div>
+                  <div style={{ padding: '2rem', textAlign: 'center', color: '#4A4A6A' }}>
+                    <p style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>⚠️ Access Restricted</p>
+                    <p>
+                      {isSuperAdmin
+                        ? 'Settings management will be available in the next update.'
+                        : 'Only Super Admins can modify website settings.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </main>
     </div>
   );
 }

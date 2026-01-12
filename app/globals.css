@@ -5,8 +5,161 @@
 :root {
   --font-poppins: 'Poppins', sans-serif;
   --font-open-sans: 'Open Sans', sans-serif;
+
+  /* Memphis Design Variables */
+  --primary: #FF71CE;
+  --primary-dark: #FF1493;
+  --secondary: #FFCE5C;
+  --accent: #86CCCA;
+  --purple: #6A7BB4;
+  --background: #FFF9F0;
+  --surface: #FFFFFF;
+  --text-primary: #1A1A2E;
+  --text-secondary: #4A4A6A;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-primary);
 }
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Memphis Button Styles */
+.btn-memphis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(255, 113, 206, 0.15);
+}
+
+.btn-memphis:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 113, 206, 0.25);
+}
+
+/* Memphis Card */
+.card-memphis {
+  background: var(--surface);
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--primary);
+}
+
+/* Memphis Input */
+.input-memphis {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #E5E7EB;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.input-memphis:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 113, 206, 0.1);
+}
+
+/* Badge */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-pending {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.badge-processing {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.badge-completed {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content-memphis {
+  background: var(--surface);
+  border-radius: 0.75rem;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease-out;
+  border: 3px solid var(--primary);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Notification */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 1.5rem;
+  border-radius: 0.5rem;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
